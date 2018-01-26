@@ -1,0 +1,118 @@
+#!/usr/bin/python3.5
+# -*- coding: utf-8 -*-
+
+"""
+Permet de générer des .properties à partir d'un csv
+"""
+import os
+import csv
+from pathlib import Path
+
+folder = '/home/lyd/tradCsvToProperties3'
+csvFile = 'mail.csv'
+
+def fileExist(pathToFile):
+    """
+        Retourne true si le fichier exist
+    """
+    my_file = Path(pathToFile)
+    if my_file.py():
+        return True
+    return False
+def loadProperties(filePath):
+    """
+    Read the file passed as parameter as a properties file.
+    """
+    sep='='
+    comment_char='#'
+    props = {}
+    with open(filePath, "rt") as f:
+        for line in f:
+            l = line.strip()
+            if l and not l.startswith(comment_char):
+                key_value = l.split(sep)
+                key = key_value[0].strip()
+                value = sep.join(key_value[1:]).strip().strip('"') 
+                props[key] = value 
+    return props
+def keyExist(key, filePath):
+    """
+    Retourne True si la clé existe sinon False
+    eg : 
+        key = 'account.addressbook.editaddress.editaddress'
+        filePath = '/home/lyd/resources/account_fr_FR.properties'
+        print(keyExist(key, filePath))
+    """
+    lesProps = loadProperties(filePath)
+    try:
+        lesProps[key]
+        return True
+    except: 
+        pass
+    return False
+def rowNum(propertiesFilePath, key):
+    with open(propertiesFilePath) as myFile:
+        for num, line in enumerate(myFile, 1):
+            if key in line:
+                # print('C\'est à dire à la ligne : ' + str(num))
+                return num - 1
+def replace_line(file_name, line_num, text):
+    lines = open(file_name, 'r').readlines()
+    lines[line_num] = text
+    out = open(file_name, 'w')
+    out.writelines(lines)
+    print('remplacement de la ligne '+ str(line_num + 1) +' par ' + text)
+    out.close()
+
+print('PARAMETRES DU SCRIPT :\nfolder -> ' + folder, '\ncsvFile -> ' + csvFile + '\n')
+csvfile = open(folder + '/' + csvFile, newline='') # ouvir le csv
+reader = csv.reader(csvfile, delimiter=';', quotechar='"') # FILE;KEY=VAL;KEY;VAL;DOUBLON
+
+l = 0
+# for row in reader: # pour chaque ligne du csv
+for rowTab in reader: # pour chaque ligne du csv
+    l += 1
+    # rowTab = row[0].split(';') # toDo changer le délimiteur en §
+    propertiesFile = rowTab[0]
+    if propertiesFile == 'FILE': # on passe la ligne entete
+        continue
+    keyVal = rowTab[1]
+    try:
+        key = rowTab[2]
+    except Exception:
+        print('\n\nouche ligne ' + str(l) + ' !')
+        print(row)
+        print(row[0])
+        print(rowTab)
+        continue
+        pass
+    
+    val = rowTab[3]
+    # doublon = rowTab[4]
+    file = open(folder + '/' + propertiesFile, 'a') # si le fichier n'existe pas on le créé
+    file.close()
+    file = open(folder + '/' + propertiesFile, 'r') # on lit le fichier
+    content = file.readlines()
+    file.close()
+    content = [x.strip() for x in content] # enlève les saut de ligne dans le tableau
+    if key + '=' + val in content: # si key + val déjà présent dans .properties
+        print(key + '=' + val + ' déjà dans ' + propertiesFile + ' donc on passe.')
+        continue
+    else:# sinon on va ajouter la clé valeur à la bonne ligne ou à la fin
+        try:
+            if not keyExist(key, folder + '/' + propertiesFile): # ajouter à la fin si key non présente
+                file = open(folder + '/' + propertiesFile, 'a')
+                print('Ajout à la fin de ' + propertiesFile + ' de ' + key + '=' + val)
+                file.write(key + '=' + val)
+                file.write('\n')
+                file.close()
+            else: # ajouter à la bonne ligne si key présent 
+                num = rowNum(folder + '/' + propertiesFile, key)
+                print('Dans ' + propertiesFile + ', ')
+                replace_line(folder + '/' + propertiesFile, num, key + '=' + val + '\n')
+        except Exception:
+            print('Error when writing in ' + propertiesFile + ' the key and val ' + keyVal)
+            pass
+# todo : ajout d'un fichier log
+# ajout fichier de conf
+# 

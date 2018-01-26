@@ -1,0 +1,59 @@
+#!/usr/bin/python3.5
+# -*- coding: utf-8 -*-
+
+"""
+Extract essentials infos from the content xml to a csv
+Attention modification du fichier :
+        suppression attribut lien sur la première balise <library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31"
+        remplacement attribut xml:lang par lang
+http://apprendre-python.com/page-xml-python-xpath
+http://blog.norore.fr/index.php?article14/parser-un-fichier-xml-avec-espaces-nommes-a-coup-de-python
+"""
+import csv
+from lxml import etree
+
+fichier = "content-be-babyliss.xml"
+csvFile = 'content_nl_BE.csv'
+# fichier = "siteGenesisGlobalContent.xml"
+# csvFile = 'siteGenesisGlobalContent.csv'
+arbre = etree.parse(fichier)
+
+csvfile = open(csvFile, 'w', newline='')
+spamwriter = csv.writer(csvfile, delimiter='§', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+spamwriter.writerow(['ID', 'TYPE', 'SOUS-TYPE', 'FR', 'NL', 'TO TRANSLATE'])
+maxValLen = 500
+def writeNodeContainer(nodeContainerObject, spamwriter, nodeContainer, contentType, nodeContainerId):
+        for nodeContainerObject in nodeContainerObject.iter(nodeContainer):
+                fr = ''
+                for contentSousTypeObject in nodeContainerObject.iter(contentType):
+                        if(contentSousTypeObject.get("lang") == 'fr-BE'):
+                                # fr = contentSousTypeObject.text[0:maxValLen].strip()
+                                fr = contentSousTypeObject.text.strip()
+                        else:
+                                if(contentSousTypeObject.get("lang") == 'nl-BE'):
+                                        # nl = contentSousTypeObject.text[0:maxValLen].strip()
+                                        nl = contentSousTypeObject.text.strip()
+                                        toTranslate = 'TRUE'
+                                        if(fr == nl):
+                                                same = 'TRUE'
+                                                if(fr == ''):
+                                                        toTranslate = 'FALSE'
+                                        else:
+                                                same = 'FALSE'
+                                                toTranslate = same
+                                        contentSousType = contentSousTypeObject.get("attribute-id")
+                                        spamwriter.writerow([nodeContainerId, contentType, contentSousType, fr, nl, toTranslate])
+for noeud in arbre.xpath('//library'):
+        for folder in noeud.iter('folder'):
+                nodeContainerId = folder.get('folder-id')
+                writeNodeContainer(folder, spamwriter, 'folder', 'display-name', nodeContainerId)
+                for refinementDefinitions in folder.iter('refinement-definitions'):
+                        writeNodeContainer(refinementDefinitions, spamwriter, 'refinement-definitions', 'display-name', nodeContainerId)
+        for content in noeud.iter('content'):
+                nodeContainerId = content.get('content-id')
+                writeNodeContainer(content, spamwriter, 'content', 'display-name', nodeContainerId)
+                writeNodeContainer(content, spamwriter, 'content', 'description', nodeContainerId)
+                writeNodeContainer(content, spamwriter, 'custom-attributes', 'custom-attribute', nodeContainerId)
+                writeNodeContainer(content, spamwriter, 'page-attributes', 'page-description', nodeContainerId)
+                writeNodeContainer(content, spamwriter, 'page-attributes', 'page-keywords', nodeContainerId)
+                writeNodeContainer(content, spamwriter, 'page-attributes', 'page-title', nodeContainerId)

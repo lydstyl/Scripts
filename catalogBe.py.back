@@ -1,0 +1,32 @@
+#!/usr/bin/python3.5
+# -*- coding: utf-8 -*-
+
+"""
+Extract xml
+Attention modification du fichier :
+        xmlns="http://www.demandware.com/xml/impex/catalog/2006-10-31" catalog-id="master-fr"
+        remplacement attribut xml:lang par lang
+http://apprendre-python.com/page-xml-python-xpath
+http://blog.norore.fr/index.php?article14/parser-un-fichier-xml-avec-espaces-nommes-a-coup-de-python
+"""
+import csv
+from lxml import etree
+
+fileName = "sysObjectTypeBE2"
+
+fichier = fileName + ".xml"
+csvFile = fileName + '.csv'
+arbre = etree.parse(fichier)
+csvfile = open(csvFile, 'w', newline='')
+spamwriter = csv.writer(csvfile, delimiter='§', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+spamwriter.writerow(['attributeId', 'displayName'])
+for noeud in arbre.xpath('//metadata'):
+        for typeExtension in noeud.iter('type-extension'):
+                for customAttributeDefinitions in typeExtension.iter('custom-attribute-definitions'):
+                        for attributeDefinition in customAttributeDefinitions.iter('attribute-definition'):
+                                attributeId = attributeDefinition.get('attribute-id')
+                                for displayName in attributeDefinition.iter('display-name'):
+                                        lang = displayName.get('lang')
+                                        if lang == "fr-FR":
+                                                spamwriter.writerow([attributeId, displayName.text])
