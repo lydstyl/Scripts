@@ -1,0 +1,4 @@
+Change your PATH in ~/.bashrc with adding something like this:
+
+PATH=${PATH}:"~/Dropbox/Informatique/Scripts/Altima":"~/Dropbox/Informatique/Scripts/Altima/ressourcesImportExport":"~/Dropbox/Informatique/Scripts/Altima/startAppsLauncher"
+export PATH
